@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Pallet & Container Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: shipping-manifest page. Corrugated container-steel header band, a row of
+     section links, then stacked sections (mission, Stages 1, 2a, 2b, 3, challenges,
+     AI log). Tables carry the team's answers; checks sit beside them and can be hidden. */
+  :root {
+    --bg: #eaeff2;
+    --surface: #ffffff;
+    --surface-2: #e1e8ec;
+    --ink: #14232b;
+    --ink-2: #485b66;
+    --rule: #c5d1d8;
+    --accent: #1d5f7d;
+    --hero-bg: #1d5f7d;
+    --hero-ink: #ffffff;
+    --opt-a: #1d5f7d;
+    --opt-b: #b9531a;
+    --pallet: #a9783f;
+    --carton: #d8b57c;
+    --carton-line: #8a6a36;
+    --ok: #1b6e45;
+    --ok-bg: #d9efe2;
+    --warn: #8a5000;
+    --warn-bg: #fbe8c6;
+    --bad: #a3231f;
+    --bad-bg: #f8dcda;
+    --font-display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+    --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e191f; --surface: #15252d; --surface-2: #1d313b; --ink: #e5eef2; --ink-2: #9fb2bc;
+      --rule: #2b414c; --accent: #6bb6da; --hero-bg: #194257; --hero-ink: #ffffff;
+      --opt-a: #6bb6da; --opt-b: #f08d57; --pallet: #a67c45; --carton: #b88d52; --carton-line: #6b5028;
+      --ok: #7bd6a4; --ok-bg: #163a29; --warn: #f2bb62; --warn-bg: #3b2d10; --bad: #ff9a94; --bad-bg: #44201e;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e191f; --surface: #15252d; --surface-2: #1d313b; --ink: #e5eef2; --ink-2: #9fb2bc;
+    --rule: #2b414c; --accent: #6bb6da; --hero-bg: #194257; --hero-ink: #ffffff;
+    --opt-a: #6bb6da; --opt-b: #f08d57; --pallet: #a67c45; --carton: #b88d52; --carton-line: #6b5028;
+    --ok: #7bd6a4; --ok-bg: #163a29; --warn: #f2bb62; --warn-bg: #3b2d10; --bad: #ff9a94; --bad-bg: #44201e;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  }
+  .wrap {
+    max-width: 1040px; margin-inline: auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.05; }
+  .mono, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .label {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2);
+  }
+  a { color: var(--accent); }
+
+  /* header */
+  .hero { background: var(--hero-bg); color: var(--hero-ink); position: relative; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0 5px, rgba(0,0,0,0.10) 5px 10px);
+  }
+  .hero .wrap { position: relative; padding-block: 28px 24px; display: grid; gap: 14px; }
+  .hero h1 { font-size: clamp(40px, 8vw, 68px); font-weight: 700; text-transform: uppercase; letter-spacing: 0.01em; }
+  .hero p { margin: 0; max-width: 60ch; font-size: 17px; opacity: 0.92; }
+  .hero-row { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
+  .hero .label { color: var(--hero-ink); opacity: 0.8; }
+
+  .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px; font-weight: 500; }
+  .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .switch .track {
+    width: 42px; height: 24px; border-radius: 12px; background: rgba(255,255,255,0.28);
+    position: relative; transition: background .15s;
+  }
+  .switch .track::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; transition: transform .15s;
+  }
+  .switch input:checked + .track { background: #f2b14b; }
+  .switch input:checked + .track::after { transform: translateX(18px); }
+  .switch input:focus-visible + .track { outline: 3px solid #fff; outline-offset: 2px; }
+
+  .nav { display: flex; flex-wrap: wrap; gap: 8px; padding-block: 16px 0; }
+  .nav a {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none;
+    color: var(--ink); background: var(--surface); border: 1px solid var(--rule); padding: 7px 11px; border-radius: 3px;
+  }
+  .nav a:hover { background: var(--surface-2); }
+  .nav a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  main { display: grid; gap: 44px; padding-block: 28px 48px; }
+  section { display: grid; gap: 18px; min-width: 0; scroll-margin-top: 12px; }
+  .sec-head { display: grid; gap: 4px; }
+  .sec-head h2 { font-size: clamp(30px, 5vw, 42px); font-weight: 700; text-transform: uppercase; }
+  .sec-head p { margin: 0; color: var(--ink-2); max-width: 65ch; }
+  h3 { font-size: 24px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+
+  /* brief facts */
+  .facts {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1px;
+    background: var(--rule); border: 1px solid var(--rule);
+  }
+  .fact { background: var(--surface); padding: 12px 14px; min-width: 0; }
+  .fact b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 15px; margin-top: 2px; overflow-wrap: anywhere; }
+
+  /* tables */
+  .scroll { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    background: var(--surface-2); font-family: var(--font-mono); font-weight: 500; font-size: 12px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap;
+  }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+  tbody th { font-weight: 600; }
+  td.num { white-space: nowrap; }
+  .nowrap { white-space: nowrap; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; }
+  .dot.a { background: var(--opt-a); } .dot.b { background: var(--opt-b); }
+
+  .chip {
+    display: inline-block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em;
+    padding: 2px 7px; border-radius: 3px; white-space: nowrap; vertical-align: 1px;
+  }
+  .chip.ok { background: var(--ok-bg); color: var(--ok); }
+  .chip.warn { background: var(--warn-bg); color: var(--warn); }
+  .chip.bad { background: var(--bad-bg); color: var(--bad); }
+  .cell-flag { background: var(--warn-bg); }
+  .cell-flag .was { text-decoration: line-through; text-decoration-thickness: 1px; opacity: 0.75; }
+  .cell-flag .now { display: block; color: var(--warn); font-weight: 500; }
+  .small { color: var(--ink-2); font-size: 13px; }
+
+  .hide-checks .check { display: none !important; }
+  .hide-checks .cell-flag { background: transparent; }
+  .hide-checks .cell-flag .was { text-decoration: none; opacity: 1; }
+
+  /* figures */
+  .figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .fig { background: var(--surface); border: 1px solid var(--rule); padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+  .fig svg { width: 100%; height: auto; display: block; max-width: 460px; margin-inline: auto; }
+  .fig p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .s-base { fill: var(--pallet); }
+  .s-carton { fill: var(--carton); stroke: var(--carton-line); stroke-width: 1.2; }
+  .s-line { stroke: var(--carton-line); stroke-width: 1; fill: none; }
+  .s-dim { stroke: var(--ink-2); stroke-width: 1; fill: none; }
+  .s-team { stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+  .s-text { fill: var(--ink-2); font-family: var(--font-mono); font-size: 12px; }
+  .s-text-warn { fill: var(--warn); font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+  .s-text-ink { fill: #3b2c14; font-family: var(--font-mono); font-size: 12px; }
+
+  .stepper { display: grid; gap: 10px; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  button {
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--ink-2); border-radius: 4px; padding: 6px 12px; cursor: pointer;
+  }
+  button:hover { background: var(--surface-2); }
+  button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  button:focus-visible, input[type="range"]:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .readout div { background: var(--surface); padding: 8px 12px; }
+  .readout b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 18px; }
+
+  /* callouts */
+  .note { background: var(--surface); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 6px; }
+  .note p { margin: 0; max-width: 70ch; }
+  .note.flag { border-color: var(--warn); background: var(--warn-bg); }
+  .note.good { border-color: var(--ok); background: var(--ok-bg); }
+  .note h4 { margin: 0; font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+  .note.flag h4 { color: var(--warn); } .note.good h4 { color: var(--ok); }
+  blockquote { margin: 0; padding: 4px 0 4px 14px; border-left: 3px solid var(--rule); color: var(--ink); }
+  .quote-src { color: var(--ink-2); font-size: 13px; }
+
+  /* bars */
+  .bars { display: grid; gap: 14px; background: var(--surface); border: 1px solid var(--rule); padding: 16px; }
+  .bar-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 118px; gap: 12px; align-items: center; }
+  .bar-row .name { font-weight: 600; font-size: 15px; }
+  .track-bar { height: 34px; background: var(--surface-2); display: flex; overflow: hidden; }
+  .seg-f, .seg-d { height: 100%; transition: width .2s; }
+  .a .seg-f { background: var(--opt-a); } .b .seg-f { background: var(--opt-b); }
+  .a .seg-d { background: repeating-linear-gradient(135deg, var(--opt-a) 0 3px, transparent 3px 7px); }
+  .b .seg-d { background: repeating-linear-gradient(135deg, var(--opt-b) 0 3px, transparent 3px 7px); }
+  .act .seg-f { background: var(--ink-2); } .vol .seg-f { background: var(--opt-b); }
+  .bar-row .total { font-family: var(--font-mono); font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+  .bar-row.charged .name::after { content: " · charged"; font-weight: 400; color: var(--ok); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); }
+  .legend i { display: inline-block; width: 22px; height: 10px; margin-right: 6px; vertical-align: middle; background: var(--ink-2); }
+  .legend i.hatch { background: repeating-linear-gradient(135deg, var(--ink-2) 0 3px, transparent 3px 7px); }
+
+  .sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; background: var(--surface); border: 1px solid var(--rule); padding: 16px; }
+  .slider { display: grid; gap: 6px; min-width: 0; }
+  .slider-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .slider output { font-family: var(--font-mono); font-size: 20px; font-weight: 500; }
+  .verdict { font-size: 18px; font-weight: 600; margin: 0; }
+  .verdict-row { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between; grid-column: 1 / -1; border-top: 1px solid var(--rule); padding-top: 12px; }
+
+  .decision { background: var(--surface); border: 1px solid var(--ink); padding: 18px 20px; display: grid; gap: 8px; }
+  .decision p { margin: 0; font-size: 20px; line-height: 1.35; max-width: 60ch; }
+  .decision p.quote-src { font-size: 13px; }
+
+  /* stage 2: prompts, marks, dialog */
+  .prompt-box {
+    background: var(--surface-2); border: 1px solid var(--rule); padding: 12px 14px; font-family: var(--font-mono);
+    font-size: 13.5px; line-height: 1.55; overflow-wrap: anywhere;
+  }
+  .duel { display: grid; gap: 12px; }
+  .lines { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--rule); }
+  .line { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--rule); align-items: start; }
+  .line:last-child { border-bottom: 0; }
+  .line .txt { min-width: 0; overflow-wrap: anywhere; }
+  .line .why { display: block; color: var(--ink-2); font-size: 13.5px; margin-top: 2px; }
+  .mark {
+    width: 34px; height: 34px; border-radius: 50%; padding: 0; font-size: 17px; line-height: 1; font-weight: 600;
+    display: grid; place-items: center; border-width: 1.5px;
+  }
+  .mark::before { content: "✓"; }
+  .mark[data-s="ok"] { color: var(--ok); background: var(--ok-bg); border-color: var(--ok); }
+  .mark[data-s="q"] { color: var(--warn); background: var(--warn-bg); border-color: var(--warn); }
+  .mark[data-s="q"]::before { content: "?"; }
+  .mark[data-s="x"] { color: var(--bad); background: var(--bad-bg); border-color: var(--bad); }
+  .mark[data-s="x"]::before { content: "✗"; }
+  .tally { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
+  .response-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; justify-content: space-between; }
+
+  .q, .a { border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 8px; min-width: 0; }
+  .q { background: var(--surface-2); }
+  .a { background: var(--surface); margin-left: clamp(0px, 4vw, 40px); }
+  .q p, .a p { margin: 0; max-width: 70ch; }
+  details.a > summary { cursor: pointer; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); list-style-position: inside; }
+  details.a[open] > summary { margin-bottom: 8px; }
+  .qa { display: grid; gap: 10px; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+  .card { background: var(--surface); border: 1px solid var(--rule); padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+  .card ol, .card ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+  .card li { max-width: 60ch; }
+
+  .log { display: grid; gap: 12px; }
+  .log-item { background: var(--surface); border: 1px solid var(--rule); padding: 14px 16px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; }
+  .log-item .n { font-family: var(--font-display); font-size: 34px; font-weight: 700; line-height: 1; color: var(--accent); grid-row: span 2; }
+  .log-item p { margin: 0; max-width: 70ch; }
+
+  footer { border-top: 1px solid var(--rule); padding-block: 18px 28px; color: var(--ink-2); font-size: 14px; display: grid; gap: 4px; }
+  footer p { margin: 0; }
+
+  @media (max-width: 560px) {
+    .bar-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .bar-row .track-bar { grid-column: 1 / -1; grid-row: 2; }
+    .a { margin-left: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .seg-f, .seg-d, .switch .track, .switch .track::after { transition: none; }
+  }
+</style>
+
+</head>
+<body>
+<div class="hero">
+  <div class="wrap">
+    <span class="label">International Logistics I · Weeks 9–10 · Team workbook</span>
+    <h1>Pallet &amp; Container Studio</h1>
+    <p>Our answers for Stages 1, 2 and 3, with the AI prompt duel, the inspector role-play, two extra challenges and our AI log. Every number has a check next to it.</p>
+    <div class="hero-row">
+      <span class="label">Ship 3,200 cartons of quinoa chips at the lowest total cost</span>
+      <label class="switch" for="showChecks">
+        <input type="checkbox" id="showChecks" checked>
+        <span class="track" aria-hidden="true"></span>
+        <span>Show checks</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="page">
+<nav class="nav" aria-label="Sections">
+  <a href="#brief">Mission</a>
+  <a href="#stage1">Stage 1</a>
+  <a href="#stage2a">Stage 2a</a>
+  <a href="#stage2b">Stage 2b</a>
+  <a href="#stage3">Stage 3</a>
+  <a href="#challenges">Challenges</a>
+  <a href="#ailog">AI log</a>
+</nav>
+
+<main>
+
+  <section id="brief" aria-labelledby="brief-h">
+    <div class="sec-head">
+      <span class="label">The mission</span>
+      <h2 id="brief-h">Ship 3,200 cartons at the lowest total cost</h2>
+      <p>Next Inca Crunch order: quinoa chips. Total cost is freight plus expected damage (the risk).</p>
+    </div>
+    <div class="facts">
+      <div class="fact"><span class="label">Cartons</span><b>3,200 × 30 × 25 × 20 cm</b></div>
+      <div class="fact"><span class="label">Carton weight · price</span><b>2.4 kg · US$ 14</b></div>
+      <div class="fact"><span class="label">Cargo value</span><b>US$ 44,800</b></div>
+      <div class="fact"><span class="label">Pallet</span><b>120 × 100 cm · 15 cm high · 25 kg</b></div>
+      <div class="fact"><span class="label">Supplier limit</span><b>8 layers per pallet</b></div>
+      <div class="fact"><span class="label">Capacity (no stacking)</span><b>40′ HC 20 pallets · 20′ 10 pallets</b></div>
+      <div class="fact"><span class="label">Rates</span><b>40′ HC US$ 3,200 · 20′ US$ 1,900</b></div>
+      <div class="fact"><span class="label">Expected damage</span><b>A (5 layers) 0.5% · B (8 layers) 1.5%</b></div>
+    </div>
+  </section>
+
+  <section id="stage1" aria-labelledby="s1-h">
+    <div class="sec-head">
+      <span class="label">Stage 1 · by hand · no AI</span>
+      <h2 id="s1-h">Layer, pallet, containers</h2>
+      <p>Our workbook table, with the values exactly as the team wrote them.</p>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Option</th><th>Layers</th><th>Cartons / pallet</th><th>Height (cm)</th>
+            <th>Weight (kg)</th><th>Pallets</th><th>Containers</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th class="nowrap"><span class="dot a"></span>A</th>
+            <td class="num">5</td><td class="num">80</td><td class="num">115</td>
+            <td class="num">217</td><td class="num">40</td><td class="nowrap">2 × 40′ HC</td>
+          </tr>
+          <tr>
+            <th class="nowrap"><span class="dot b"></span>B</th>
+            <td class="num">8</td><td class="num">128</td>
+            <td class="num cell-flag"><span class="was">165</span><span class="now check">check: 175</span></td>
+            <td class="num">332.2</td><td class="num">25</td><td class="nowrap">1 × 40′ HC + 1 × 20′ HC</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check"><span class="chip ok">✓ matches</span> <span class="quote-src">Cartons per pallet, weight, pallets and containers all check out for A and B. One value differs: the height of B.</span></div>
+
+    <div class="note flag check">
+      <h4>Difference found · Option B height</h4>
+      <p>Team: 165 cm. Check: 175 cm. Pallet height = 15 cm + layers × 20 cm. For 8 layers: 15 + 8 × 20 = 175. The 165 comes from adding 5 cm instead of 15 cm. This matters in Stage 2b, which describes this pallet as 1.75 m high, and in Challenge 2 (air freight), which uses 175 cm.</p>
+    </div>
+
+    <h3>Volume of the load</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Item</th><th>Team wrote</th><th>Reads as</th><th class="check">Check</th></tr></thead>
+        <tbody>
+          <tr><th>One carton</th><td class="num">0.015cm</td><td class="num">0.30 × 0.25 × 0.20 m = 0.015 m³</td><td class="check"><span class="chip warn">≠ unit</span> <span class="quote-src">m³, not cm</span></td></tr>
+          <tr><th>Option A load</th><td class="num">5 pallets: 1.2 m3</td><td class="num">5 layers: 1.20 × 1.00 × 1.00 m = 1.2 m³</td><td class="check"><span class="chip warn">≠ label</span> <span class="quote-src">“layers”, not “pallets”</span></td></tr>
+          <tr><th>Option B load</th><td class="num">8pallets: 1.92 m3</td><td class="num">8 layers: 1.20 × 1.00 × 1.60 m = 1.92 m³</td><td class="check"><span class="chip warn">≠ label</span> <span class="quote-src">“layers”, not “pallets”</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="figs">
+      <div class="fig">
+        <span class="label">Top view · one layer</span>
+        <svg viewBox="0 0 420 345" role="img" aria-label="Top view of one layer: 16 cartons of 30 by 25 centimetres on a 120 by 100 centimetre pallet, 4 by 4">
+          <g id="topview"></g>
+        </svg>
+        <p>16 cartons per layer: 120 ÷ 30 = 4 along the length, 100 ÷ 25 = 4 along the width. The team's notes give 80 cartons for 5 layers, which implies 80 ÷ 5 = 16 per layer. The other orientation gives only 4 × 3 = 12.</p>
+      </div>
+
+      <div class="fig stepper">
+        <span class="label">Side view · build the pallet</span>
+        <div class="btn-row" role="group" aria-label="Choose an option">
+          <button type="button" id="goA" aria-pressed="false">Option A · 5 layers</button>
+          <button type="button" id="goB" aria-pressed="true">Option B · 8 layers</button>
+        </div>
+        <svg id="stack" viewBox="0 0 420 330" role="img" aria-label="Side view of the pallet with the chosen number of layers"></svg>
+        <div class="slider">
+          <div class="slider-top"><label for="layers" class="label">Layers</label><output id="layersOut" for="layers" class="mono">8</output></div>
+          <input type="range" id="layers" min="1" max="8" step="1" value="8">
+        </div>
+        <div class="readout" aria-live="polite">
+          <div><span class="label">Cartons / pallet</span><b id="rCartons">128</b></div>
+          <div><span class="label">Height</span><b id="rHeight">175 cm</b></div>
+          <div><span class="label">Weight</span><b id="rWeight">332.2 kg</b></div>
+          <div><span class="label">Pallets for 3,200</span><b id="rPallets">25</b></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Containers</h3>
+    <blockquote>
+      Option A needs 40 pallets: 2 × 40′ HC. Option B needs 25 pallets: 1 × 40′ HC and 1 × 20′ HC.
+      We had doubts because with 25 pallets in total the second container would not be full.
+      <div class="quote-src">Team note, translated from Spanish.</div>
+    </blockquote>
+    <div class="note good check">
+      <h4>Check · the doubt is right, the choice still works</h4>
+      <p>The 20′ carries 5 of its 10 pallet positions (50% full). Even so, 40′ + 20′ costs US$ 5,100, which is US$ 1,300 less than 2 × 40′ at US$ 6,400.</p>
+    </div>
+  </section>
+
+  <section id="stage2a" aria-labelledby="s2a-h">
+    <div class="sec-head">
+      <span class="label">Stage 2a · prompt duel</span>
+      <h2 id="s2a-h">A vague prompt against a detailed prompt</h2>
+      <p>We ran both prompts with the AI and checked them against our own work. Each line has a mark: ✓ correct, ✗ wrong, ? unsure. Click a mark to change it.</p>
+    </div>
+
+    <div class="duel">
+      <h3>Prompt 1 · Vague</h3>
+      <div class="prompt-box">How many pallets do I need for 3,200 cartons?</div>
+      <div class="response-head"><span class="label">AI response</span><span class="tally" data-tally="p1"></span></div>
+      <ol class="lines" id="p1">
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt">I can't give an exact number yet, because it depends on how many cartons fit on one pallet.</div></li>
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt">pallets = ⌈ total cartons ÷ cartons per pallet ⌉ <span class="why">The formula is right: always round up.</span></div></li>
+        <li class="line"><button type="button" class="mark" data-s="q"></button><div class="txt">Illustrative examples for 3,200 cartons: 40 per pallet → 80 pallets; 64 → 50; 80 → 40; 100 → 32; 128 → 25. <span class="why">The arithmetic is right, but the examples are invented. Only 80 and 128 cartons per pallet match our options.</span></div></li>
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt">It depends on the carton size, the pallet size (for example 120 × 100 cm), the maximum stack height and the maximum weight. If you send those, I can calculate the exact number.</div></li>
+      </ol>
+      <div class="note flag">
+        <h4>Hidden assumption · Prompt 1</h4>
+        <p>The answer assumes that all cartons are the same and every pallet is full. It gives no number we can use for the decision. A vague prompt gets a vague answer.</p>
+      </div>
+    </div>
+
+    <div class="duel">
+      <h3>Prompt 2 · Detailed</h3>
+      <div class="prompt-box">You are a logistics analyst. Cartons are 30×25×20 cm and 2.4 kg. The pallet is 120×100 cm, 15 cm high, 25 kg. Maximum 8 layers. Calculate: cartons per layer (check both orientations), cartons per pallet for 5 and 8 layers, pallets for 3,200 cartons, and containers (40′ HC = 20 pallets, 20′ = 10 pallets, no stacking of pallets). Show every step and list your assumptions.</div>
+      <div class="response-head"><span class="label">AI response</span><span class="tally" data-tally="p2"></span></div>
+      <ol class="lines" id="p2">
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt"><b>Step 1 · Orientation 1</b> (30 cm along the 120 cm side): ⌊120 ÷ 30⌋ × ⌊100 ÷ 25⌋ = 4 × 4 = <b>16</b> cartons per layer.</div></li>
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt"><b>Step 1 · Orientation 2</b> (rotated 90°): ⌊120 ÷ 25⌋ × ⌊100 ÷ 30⌋ = 4 × 3 = <b>12</b>. The 4.8 and 3.33 are rounded down, so space is wasted.</div></li>
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt"><b>Upper bound:</b> pallet area 12,000 cm² ÷ carton footprint 750 cm² = 16. Orientation 1 reaches it with no waste, so it uses <b>16 per layer</b>.</div></li>
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt"><b>Step 2 · Cartons per pallet:</b> 5 layers: 16 × 5 = <b>80</b>. 8 layers: 16 × 8 = <b>128</b>.</div></li>
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt"><b>Step 3 · Pallets:</b> 3,200 ÷ 80 = <b>40</b>. 3,200 ÷ 128 = <b>25</b>. Both divide exactly, so there is no partial pallet.</div></li>
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt"><b>Step 4 · Containers, 5 layers:</b> 40 ÷ 20 = <b>2 × 40′ HC</b>, exactly full.</div></li>
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt"><b>Step 4 · Containers, 8 layers:</b> 20 pallets in a <b>40′ HC</b> and 5 in a <b>20′</b> (10 positions, half used). That is 30 positions, 5 empty. 2 × 40′ HC also works (15 empty).</div></li>
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt">Which one is cheaper cannot be decided here, because this prompt gives no freight rates.</div></li>
+        <li class="line"><button type="button" class="mark" data-s="q"></button><div class="txt"><b>Assumption 1:</b> cartons stay upright: the 20 cm side is vertical and the 30 × 25 cm face is on the pallet. <span class="why">The prompt never said this. If a carton lies on its 25 × 20 cm face, up to 24 fit per layer, but each layer is 30 cm tall. Then 8 layers make 15 + 8 × 30 = 255 cm.</span></div></li>
+        <li class="line"><button type="button" class="mark" data-s="ok"></button><div class="txt"><b>Assumptions 2 to 6:</b> a simple grid with no overhang; every pallet full; “layer” means one level of cartons; container limits are only the pallet positions given; pallet height and weight are not calculated because the prompt did not ask for them.</div></li>
+      </ol>
+      <div class="note flag">
+        <h4>Hidden assumption · Prompt 2</h4>
+        <p>The AI assumed that the cartons stand upright, and it only did what the prompt asked. It did not calculate height or weight, so it could not see our height error in Option B.</p>
+      </div>
+    </div>
+
+    <h3>Our calculation against the AI</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Item</th><th>Team (Stage 1)</th><th>AI (Prompt 2)</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><th>Cartons per layer</th><td class="num">16 <span class="small">(80 ÷ 5)</span></td><td class="num">16 <span class="small">(12 the other way)</span></td><td><span class="chip ok">✓ same</span></td></tr>
+          <tr><th>Cartons per pallet</th><td class="num">A 80 · B 128</td><td class="num">A 80 · B 128</td><td><span class="chip ok">✓ same</span></td></tr>
+          <tr><th>Pallets</th><td class="num">A 40 · B 25</td><td class="num">A 40 · B 25</td><td><span class="chip ok">✓ same</span></td></tr>
+          <tr><th>Containers A</th><td class="nowrap">2 × 40′ HC</td><td class="nowrap">2 × 40′ HC</td><td><span class="chip ok">✓ same</span></td></tr>
+          <tr><th>Containers B</th><td>1 × 40′ HC + 1 × 20′ HC</td><td>1 × 40′ HC + 1 × 20′ <span class="small">(2 × 40′ also works)</span></td><td><span class="chip ok">✓ same</span></td></tr>
+          <tr><th>Pallet height</th><td class="num">A 115 · B 165</td><td class="small">not calculated</td><td><span class="chip warn">not asked</span> <span class="check small">B should be 175</span></td></tr>
+          <tr><th>Pallet weight</th><td class="num">A 217 · B 332.2</td><td class="small">not calculated</td><td><span class="chip warn">not asked</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note good">
+      <h4>What the duel showed</h4>
+      <p>The AI matched our hand calculation on every number it was asked for. The vague prompt gave no usable number. The detailed prompt gave the same numbers as us, because it had the carton, the pallet and the container data. The AI is a challenger, not an answer key: it answers only the question it receives.</p>
+    </div>
+  </section>
+
+  <section id="stage2b" aria-labelledby="s2b-h">
+    <div class="sec-head">
+      <span class="label">Stage 2b · inspector role-play</span>
+      <h2 id="s2b-h">A strict inspector audits our Option B pallet</h2>
+      <p>The AI plays a receiving-dock inspector at the destination port and asks three questions, one at a time.</p>
+    </div>
+
+    <div class="prompt-box">Act as a strict receiving-dock inspector at the destination port. I will describe our pallet. Audit it for packaging, labels and marks, wood-packaging compliance (ISPM-15), height and stability. Ask me three tough questions, one at a time, and wait for my answer. Then list the two biggest risks.</div>
+
+    <h3>Option B pallet as presented to the inspector</h3>
+    <div class="scroll">
+      <table>
+        <tbody>
+          <tr><th class="nowrap">Load</th><td>128 cartons (30 × 25 × 20 cm, 2.4 kg), 8 layers of 16, column pattern, no overhang.</td></tr>
+          <tr><th class="nowrap">Size and weight</th><td>120 × 100 × 175 cm, gross weight 332.2 kg.</td></tr>
+          <tr><th class="nowrap">Pallet</th><td>Wooden, 120 × 100 cm (ISO standard), heat treated (HT), ISPM-15 stamp on two opposite sides.</td></tr>
+          <tr><th class="nowrap">Layers and top</th><td>Anti-slip sheets between layers and a top sheet.</td></tr>
+          <tr><th class="nowrap">Corner boards</th><td>Four, covering the full height of the cartons (160 cm).</td></tr>
+          <tr><th class="nowrap">Wrap and strapping</th><td>Stretch wrap from the pallet to the top, with extra turns at the base and the top. Two plastic straps over the corner boards.</td></tr>
+          <tr><th class="nowrap">Marks</th><td>The nine export marking items on two adjacent sides. We assume the same route as in class: Callao to Rotterdam. The outer marks are neutral, with no product name.</td></tr>
+          <tr><th class="nowrap">Handling symbols</th><td>This way up, Fragile, Keep dry, Do not stack.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="qa">
+      <div class="q">
+        <span class="label">Inspector · Question 1 of 3 · Wood packaging</span>
+        <p>Your pallet is made of wood. Where is the ISPM-15 stamp, and what must it show? Remember: no stamp, no entry. Can I read it from two opposite sides, without cutting the stretch wrap?</p>
+      </div>
+      <details class="a" open>
+        <summary>Team answer</summary>
+        <p>The stamp is on the two short sides of the pallet, on the wooden blocks. These are two opposite sides, so you can read it from both. We keep that area free: no label and no stretch wrap on it. The stamp has four parts: the IPPC symbol, the country code PE, the producer code (who treated the wood) and HT, which means heat treated.</p>
+      </details>
+
+      <div class="q">
+        <span class="label">Inspector · Question 2 of 3 · Labels and marks</span>
+        <p>Now the marks. From the dock, I must read the shipping marks without opening anything. Which of the nine export marking items are on this pallet? Are they legible, indelible and on more than one side? What about the language and the old marks?</p>
+      </div>
+      <details class="a" open>
+        <summary>Team answer</summary>
+        <p>The nine items are on two adjacent sides: consignee name and address, port of destination (Rotterdam), order number, gross and net weight, dimensions, port of loading (Callao), country of origin (Peru), the ship, and handling instructions. The gross weight is 332.2 kg and the dimensions are 120 × 100 × 175 cm. The labels use big letters and a material that resists water, friction and sun. We write the marks in English and check the language with the importer. We use a new pallet, so there are no old marks. The outer marks do not say the product name, to avoid theft. The net weight and the ship's name must be completed when we have the product data and the booking.</p>
+      </details>
+
+      <div class="q">
+        <span class="label">Inspector · Question 3 of 3 · Height, stability and crushing</span>
+        <p>Your pallet has 8 layers, in a column pattern, and the layers are not interlocked. Last time, three pallets from your company arrived crushed in Rotterdam, because there were too many layers on weak cartons. How do you keep this tall load stable? And how do you know the cartons at the bottom will not be crushed, also if they get wet?</p>
+      </div>
+      <details class="a" open>
+        <summary>Team answer</summary>
+        <p>The pallet fits in the container (the 40′ HC is 269 cm high inside), so the problem is not the space. The problem is stability. We use a column pattern because it holds 16 cartons per layer. If we turn the layers 90°, it holds only 12. To hold the load as one unit we use anti-slip sheets, four corner boards, two straps, a top sheet and stretch wrap with extra turns. The bottom carton carries 7 × 2.4 = 16.8 kg. We do not know yet if the cartons are rated for 8 layers. We will ask the supplier. If they are not, we use stronger board or we use Option A with 5 layers. Corrugated board loses strength when it is wet, so we also put desiccant bags in the container.</p>
+      </details>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <h3>The two biggest risks</h3>
+        <ol>
+          <li><b>Crushing.</b> 8 layers is the supplier's maximum. If the cartons are not rated for it, the bottom layers can be crushed, and a wet carton is weaker.</li>
+          <li><b>Shock and vibration.</b> A tall pallet in a column pattern can shift or lean during sea transport if the wrap and strapping are not enough.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>2 changes to our pallet design</h3>
+        <ol>
+          <li><b>Keep the ISPM-15 stamp area free</b> of stretch wrap and labels, so it is visible on two opposite sides.</li>
+          <li><b>Add more load holding:</b> a third strap and more wrap turns at the base and the top, plus desiccant bags in the container. If the supplier says the cartons are not rated for 8 layers, use stronger board.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section id="stage3" aria-labelledby="s3-h">
+    <div class="sec-head">
+      <span class="label">Stage 3 · decide</span>
+      <h2 id="s3-h">Total cost and recommendation</h2>
+      <p>Total cost is freight plus expected damage, on a cargo value of US$ 44,800. Risk = damage rate × cargo value.</p>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Option</th><th>Freight (US$)</th><th>Expected damage (US$)</th><th>Total (US$)</th></tr></thead>
+        <tbody>
+          <tr>
+            <th class="nowrap"><span class="dot a"></span>A · 5 layers</th>
+            <td class="num">6,400 <span class="quote-src">2 × 3,200</span></td>
+            <td class="num">224 <span class="quote-src">0.5% of 44,800</span></td>
+            <td class="num"><b>6,624</b></td>
+          </tr>
+          <tr>
+            <th class="nowrap"><span class="dot b"></span>B · 8 layers</th>
+            <td class="num">5,100 <span class="quote-src">3,200 + 1,900</span></td>
+            <td class="num">672 <span class="quote-src">1.5% of 44,800</span></td>
+            <td class="num"><b>5,772</b></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check"><span class="chip ok">✓ matches</span> <span class="quote-src">Freight, damage and totals all check out. B is US$ 852 cheaper than A.</span></div>
+
+    <h3>Move the damage rates</h3>
+    <div class="sliders">
+      <div class="slider">
+        <div class="slider-top"><label for="rateA" class="label">Damage rate · A</label><output id="rateAOut" for="rateA">0.5%</output></div>
+        <input type="range" id="rateA" min="0" max="5" step="0.1" value="0.5">
+        <span class="quote-src">Team answer: 0.5%</span>
+      </div>
+      <div class="slider">
+        <div class="slider-top"><label for="rateB" class="label">Damage rate · B</label><output id="rateBOut" for="rateB">1.5%</output></div>
+        <input type="range" id="rateB" min="0" max="5" step="0.1" value="1.5">
+        <span class="quote-src">Team answer: 1.5%</span>
+      </div>
+      <div class="verdict-row">
+        <p class="verdict" id="verdict" aria-live="polite"></p>
+        <button type="button" id="resetRates">Reset to our answers</button>
+      </div>
+    </div>
+
+    <div class="bars">
+      <div class="bar-row a"><span class="name"><span class="dot a"></span>A · 5 layers</span><div class="track-bar"><div class="seg-f" id="fA"></div><div class="seg-d" id="dA"></div></div><span class="total" id="tA"></span></div>
+      <div class="bar-row b"><span class="name"><span class="dot b"></span>B · 8 layers</span><div class="track-bar"><div class="seg-f" id="fB"></div><div class="seg-d" id="dB"></div></div><span class="total" id="tB"></span></div>
+      <div class="legend"><span><i></i>Freight</span><span><i class="hatch"></i>Expected damage</span><span class="mono">Scale: 0 to US$ 9,000</span></div>
+    </div>
+
+    <h3>Our recommendation</h3>
+    <div class="decision">
+      <span class="label">Decision card</span>
+      <p>We recommend Option B because it is cheaper.</p>
+      <p>It would change if Option A were cheaper than Option B.</p>
+      <p class="quote-src">Wording corrected for grammar. The meaning is unchanged.</p>
+    </div>
+
+    <div class="note flag check">
+      <h4>Difference found · the condition is circular</h4>
+      <p>“If A is cheaper than B” only says the answer changes when it changes. A usable condition gives a number: the break-even rate. With A at 0.5% damage, B stops being cheaper when its damage rate rises above <b id="breakeven" class="mono">3.40%</b> (this value follows the sliders above). The same happens if the 20′ rate rises above US$ 2,752.</p>
+      <p><b>Suggested wording, using the workbook's three lines:</b> We recommend Option B because it saves US$ 852 (US$ 5,772 against US$ 6,624). It would change if the damage rate of Option B rose above the break-even rate of 3.40%.</p>
+    </div>
+  </section>
+
+  <section id="challenges" aria-labelledby="ch-h">
+    <div class="sec-head">
+      <span class="label">Fast finishers · two more challenges</span>
+      <h2 id="ch-h">Break-even and air freight</h2>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <span class="label">Challenge 1</span>
+        <h3>At what damage rate does Option B stop being cheaper than Option A?</h3>
+        <p class="small" style="margin:0">Break-even rate of B = (total of A − freight of B) ÷ cargo value. Above this rate, B loses.</p>
+        <table>
+          <tbody>
+            <tr><th>Total of A</th><td class="num">US$ 6,624</td></tr>
+            <tr><th>Freight of B</th><td class="num">− US$ 5,100</td></tr>
+            <tr><th>Difference</th><td class="num">US$ 1,524</td></tr>
+            <tr><th>÷ cargo value</th><td class="num">44,800</td></tr>
+            <tr><th>Break-even rate of B</th><td class="num"><b>3.40%</b></td></tr>
+          </tbody>
+        </table>
+        <p style="margin:0">B is cheaper while its damage rate stays below 3.40%. Our estimate is 1.5%, so the margin is 1.9 points. This is the same result as the sliders in Stage 3.</p>
+      </div>
+
+      <div class="card">
+        <span class="label">Challenge 2</span>
+        <h3>One urgent pallet goes by air. Which weight is charged?</h3>
+        <p class="small" style="margin:0">Option B pallet: 120 × 100 × H cm, 128 cartons × 2.4 kg + 25 kg pallet. Volumetric kg = L × W × H ÷ 6,000. The charged weight is the larger of actual and volumetric.</p>
+        <div class="btn-row" role="group" aria-label="Choose a pallet height">
+          <button type="button" id="h165" aria-pressed="false">Team height · 165 cm</button>
+          <button type="button" id="h175" aria-pressed="true">Check · 175 cm</button>
+        </div>
+        <div class="slider">
+          <div class="slider-top"><label for="airH" class="label">Pallet height</label><output id="airHOut" for="airH">175 cm</output></div>
+          <input type="range" id="airH" min="100" max="200" step="5" value="175">
+        </div>
+        <div class="bars" style="padding:12px">
+          <div class="bar-row act" id="rowAct"><span class="name">Actual</span><div class="track-bar"><div class="seg-f" id="barAct"></div></div><span class="total" id="valAct"></span></div>
+          <div class="bar-row vol" id="rowVol"><span class="name">Volumetric</span><div class="track-bar"><div class="seg-f" id="barVol"></div></div><span class="total" id="valVol"></span></div>
+        </div>
+        <p id="airVerdict" style="margin:0;font-weight:600" aria-live="polite"></p>
+        <p class="small check" style="margin:0">With 165 cm the volumetric weight is 330 kg, below the actual 332.2 kg, so the answer would flip. The change happens above 166.1 cm. This is why the height of 175 cm matters.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="ailog" aria-labelledby="log-h">
+    <div class="sec-head">
+      <span class="label">AI log</span>
+      <h2 id="log-h">How we used the AI</h2>
+      <p>AI helps us think. It does not do the thinking for us.</p>
+    </div>
+    <div class="log">
+      <div class="log-item"><span class="n">1</span><span class="label">The prompt that worked best</span>
+        <p>Prompt 2, the detailed one. It showed every step, checked both orientations and listed its assumptions. Its numbers matched our hand calculation: 16 cartons per layer, 80 and 128 per pallet, 40 and 25 pallets.</p></div>
+      <div class="log-item"><span class="n">2</span><span class="label">One mistake or weak spot of the AI</span>
+        <p>The vague prompt gave no number we could use, and its examples were invented. The detailed prompt only answered what we asked, so it did not calculate height or weight. It also assumed that the cartons stand upright without being told.</p></div>
+      <div class="log-item"><span class="n">3</span><span class="label">One change we made because of it</span>
+        <p>We checked our Stage 1 table with the AI and corrected the height of Option B from 165 cm to 175 cm. In Stage 3, we changed “it would change if A is cheaper” into a number: the break-even rate of 3.40%. After the inspector questions, we changed the pallet design: the stamp area stays free and we add more strapping and wrap.</p></div>
+    </div>
+    <div class="note">
+      <h4>AI tool we used</h4>
+      <p><b>Claude</b> (Anthropic). Claude also helped us write the pallet description and the inspector questions and answers in Stage 2b, and to correct the English of our texts. The team reviewed and approved them.</p>
+    </div>
+  </section>
+
+</main>
+<footer>
+  <p>All data are hypothetical, for class use.</p>
+  <p>Sources: International Logistics I · Weeks 9–10 · Pallet &amp; Container Studio team workbook, and the theory slides “From the factory door to the ship's hold”.</p>
+</footer>
+</div>
+
+<script>
+(function () {
+  var CARTONS_PER_LAYER = 16, LAYER_CM = 20, BASE_CM = 15, BASE_KG = 25, CARTON_KG = 2.4, TOTAL = 3200;
+  var V = 44800, FA = 6400, FB = 5100, AXIS = 9000;
+  var fmtUSD = function (n) { return 'US$ ' + n.toLocaleString('en-US', { maximumFractionDigits: 2 }); };
+  var $ = function (id) { return document.getElementById(id); };
+
+  // checks toggle
+  var page = $('page');
+  var chk = $('showChecks');
+  chk.addEventListener('change', function () { page.classList.toggle('hide-checks', !chk.checked); drawStack(); });
+
+  // top view of one layer: 4 x 4 cartons, 3 px per cm
+  (function () {
+    var s = 3, x0 = 30, y0 = 10, cw = 30 * s, ch = 25 * s, out = '';
+    for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+      out += '<rect class="s-carton" x="' + (x0 + c * cw) + '" y="' + (y0 + r * ch) + '" width="' + cw + '" height="' + ch + '"/>';
+    }
+    out += '<text class="s-text-ink" x="' + (x0 + cw / 2) + '" y="' + (y0 + ch / 2 - 2) + '" text-anchor="middle">30 × 25</text>';
+    out += '<text class="s-text-ink" x="' + (x0 + cw / 2) + '" y="' + (y0 + ch / 2 + 13) + '" text-anchor="middle">cm</text>';
+    out += '<line class="s-dim" x1="' + x0 + '" x2="' + (x0 + 4 * cw) + '" y1="' + (y0 + 4 * ch + 16) + '" y2="' + (y0 + 4 * ch + 16) + '"/>';
+    out += '<text class="s-text" x="' + (x0 + 2 * cw) + '" y="' + (y0 + 4 * ch + 34) + '" text-anchor="middle">120 cm · 4 cartons</text>';
+    out += '<line class="s-dim" x1="' + (x0 - 14) + '" x2="' + (x0 - 14) + '" y1="' + y0 + '" y2="' + (y0 + 4 * ch) + '"/>';
+    out += '<text class="s-text" transform="translate(' + (x0 - 20) + ',' + (y0 + 2 * ch) + ') rotate(-90)" text-anchor="middle">100 cm · 4 cartons</text>';
+    $('topview').innerHTML = out;
+  })();
+
+  // side view
+  var layersEl = $('layers');
+  function drawStack() {
+    var n = parseInt(layersEl.value, 10), s = 1.45, g = 295, x0 = 50, pw = 120 * s;
+    var baseH = BASE_CM * s, lh = LAYER_CM * s, deckH = baseH * 0.4, footH = baseH - deckH, out = '';
+    out += '<line class="s-dim" x1="10" x2="410" y1="' + g + '" y2="' + g + '"/>';
+    out += '<rect class="s-base" x="' + x0 + '" y="' + (g - baseH) + '" width="' + pw + '" height="' + deckH + '"/>';
+    [0, 0.42, 0.84].forEach(function (f) {
+      out += '<rect class="s-base" x="' + (x0 + pw * f) + '" y="' + (g - footH) + '" width="' + (pw * 0.16) + '" height="' + footH + '"/>';
+    });
+    for (var i = 0; i < n; i++) {
+      var y = g - baseH - (i + 1) * lh;
+      out += '<rect class="s-carton" x="' + x0 + '" y="' + y + '" width="' + pw + '" height="' + lh + '"/>';
+      for (var k = 1; k < 4; k++) out += '<line class="s-line" x1="' + (x0 + pw * k / 4) + '" x2="' + (x0 + pw * k / 4) + '" y1="' + y + '" y2="' + (y + lh) + '"/>';
+    }
+    var H = BASE_CM + LAYER_CM * n, top = g - H * s, dx = x0 + pw + 22;
+    out += '<line class="s-dim" x1="' + dx + '" x2="' + dx + '" y1="' + g + '" y2="' + top + '"/>';
+    out += '<line class="s-dim" x1="' + (dx - 5) + '" x2="' + (dx + 5) + '" y1="' + g + '" y2="' + g + '"/>';
+    out += '<line class="s-dim" x1="' + (dx - 5) + '" x2="' + (dx + 5) + '" y1="' + top + '" y2="' + top + '"/>';
+    out += '<text class="s-text" x="' + (dx + 10) + '" y="' + ((g + top) / 2 + 4) + '">' + H + ' cm</text>';
+    if (n === 8 && chk.checked) {
+      var ty = g - 165 * s;
+      out += '<line class="s-team" x1="' + (x0 - 10) + '" x2="' + (dx + 4) + '" y1="' + ty + '" y2="' + ty + '"/>';
+      out += '<text class="s-text-warn" x="' + (dx + 10) + '" y="' + (ty + 14) + '">team: 165</text>';
+    }
+    out += '<text class="s-text" x="' + x0 + '" y="' + (g + 20) + '">pallet 15 cm + ' + n + ' × 20 cm</text>';
+    $('stack').innerHTML = out;
+  }
+  function update() {
+    var n = parseInt(layersEl.value, 10), c = CARTONS_PER_LAYER * n;
+    var kg = Math.round((c * CARTON_KG + BASE_KG) * 10) / 10;
+    $('layersOut').textContent = n;
+    $('rCartons').textContent = c;
+    $('rHeight').textContent = (BASE_CM + LAYER_CM * n) + ' cm';
+    $('rWeight').textContent = kg + ' kg';
+    $('rPallets').textContent = Math.ceil(TOTAL / c);
+    $('goA').setAttribute('aria-pressed', n === 5 ? 'true' : 'false');
+    $('goB').setAttribute('aria-pressed', n === 8 ? 'true' : 'false');
+    drawStack();
+  }
+  layersEl.addEventListener('input', update);
+  $('goA').addEventListener('click', function () { layersEl.value = 5; update(); });
+  $('goB').addEventListener('click', function () { layersEl.value = 8; update(); });
+  update();
+
+  // stage 2a marks: click to cycle ok -> q -> x
+  var NEXT = { ok: 'q', q: 'x', x: 'ok' };
+  var NAME = { ok: 'correct', q: 'unsure', x: 'wrong' };
+  function tally(listId) {
+    var list = $(listId), c = { ok: 0, q: 0, x: 0 };
+    Array.prototype.forEach.call(list.querySelectorAll('.mark'), function (b) { c[b.getAttribute('data-s')]++; });
+    var t = document.querySelector('[data-tally="' + listId + '"]');
+    t.innerHTML = '<span class="chip ok">✓ ' + c.ok + ' correct</span><span class="chip warn">? ' + c.q + ' unsure</span><span class="chip bad">✗ ' + c.x + ' wrong</span>';
+  }
+  function label(b) { b.setAttribute('aria-label', 'Mark: ' + NAME[b.getAttribute('data-s')] + '. Click to change.'); }
+  ['p1', 'p2'].forEach(function (id) {
+    Array.prototype.forEach.call($(id).querySelectorAll('.mark'), function (b) {
+      label(b);
+      b.addEventListener('click', function () { b.setAttribute('data-s', NEXT[b.getAttribute('data-s')]); label(b); tally(id); });
+    });
+    tally(id);
+  });
+
+  // stage 3 rates
+  var rA = $('rateA'), rB = $('rateB');
+  function pct(v) { return (v / AXIS * 100) + '%'; }
+  function renderRates() {
+    var ra = parseFloat(rA.value), rb = parseFloat(rB.value);
+    var dA = V * ra / 100, dB = V * rb / 100, tA = FA + dA, tB = FB + dB;
+    $('rateAOut').textContent = ra.toFixed(1) + '%';
+    $('rateBOut').textContent = rb.toFixed(1) + '%';
+    $('fA').style.width = pct(FA); $('dA').style.width = pct(dA);
+    $('fB').style.width = pct(FB); $('dB').style.width = pct(dB);
+    $('tA').textContent = fmtUSD(tA);
+    $('tB').textContent = fmtUSD(tB);
+    var diff = Math.round((tA - tB) * 100) / 100, v = $('verdict');
+    if (diff > 0) v.textContent = 'Option B is ' + fmtUSD(diff) + ' cheaper.';
+    else if (diff < 0) v.textContent = 'Option A is ' + fmtUSD(-diff) + ' cheaper.';
+    else v.textContent = 'Both options cost the same.';
+    var be = (FA + dA - FB) / V * 100;
+    $('breakeven').textContent = be > 0 ? be.toFixed(2) + '%' : 'already above A';
+  }
+  rA.addEventListener('input', renderRates); rB.addEventListener('input', renderRates);
+  $('resetRates').addEventListener('click', function () { rA.value = 0.5; rB.value = 1.5; renderRates(); });
+  renderRates();
+
+  // challenge 2: air freight
+  var airH = $('airH'), ACTUAL = 128 * CARTON_KG + BASE_KG, AIR_AXIS = 400;
+  function renderAir() {
+    var h = parseInt(airH.value, 10), vol = 120 * 100 * h / 6000, charged = vol > ACTUAL ? 'vol' : 'act';
+    $('airHOut').textContent = h + ' cm';
+    $('barAct').style.width = (ACTUAL / AIR_AXIS * 100) + '%';
+    $('barVol').style.width = (vol / AIR_AXIS * 100) + '%';
+    $('valAct').textContent = (Math.round(ACTUAL * 10) / 10) + ' kg';
+    $('valVol').textContent = (Math.round(vol * 10) / 10) + ' kg';
+    $('rowAct').classList.toggle('charged', charged === 'act');
+    $('rowVol').classList.toggle('charged', charged === 'vol');
+    $('airVerdict').textContent = charged === 'vol'
+      ? 'Charged: volumetric weight, ' + (Math.round(vol * 10) / 10) + ' kg. We pay for space.'
+      : 'Charged: actual weight, ' + (Math.round(ACTUAL * 10) / 10) + ' kg.';
+    $('h165').setAttribute('aria-pressed', h === 165 ? 'true' : 'false');
+    $('h175').setAttribute('aria-pressed', h === 175 ? 'true' : 'false');
+  }
+  airH.addEventListener('input', renderAir);
+  $('h165').addEventListener('click', function () { airH.value = 165; renderAir(); });
+  $('h175').addEventListener('click', function () { airH.value = 175; renderAir(); });
+  renderAir();
+})();
+</script>
+</body>
+</html>
